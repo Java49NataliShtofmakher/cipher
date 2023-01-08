@@ -1,51 +1,45 @@
-const minCode: number = 'a'.charCodeAt(0); // 97
-const maxCode: number = 'z'.charCodeAt(0); // 122
-
-// 1
-function getArrayFromString(str: string): string[] {
-    return Array.from(str);
-}
-
-// 2
-function getShift(shift: number): number {
-    return shift % (maxCode - minCode + 1);
-}
-
-// 3
-function charTransform(arrayChars: string[], shift: number, action: string): string {
-    return arrayChars.map(char => {
-        let charCode: number = char.charCodeAt(0)
-        if (charCode >= minCode && charCode <= maxCode) {
-            let charCodeShifted: number = action === "cipher" ? charCode + shift : charCode - shift;
-            if (charCodeShifted > maxCode) {
-                charCodeShifted = minCode + (charCodeShifted - maxCode) - 1;
-            } else if (charCodeShifted < minCode) {
-                charCodeShifted = maxCode - (minCode - charCodeShifted) + 1;
-            }
-            return String.fromCharCode(charCodeShifted);
-        }
-        else {
-            return char;
-        }
-    }).join('')
-}
+const aCodeAscii: number = 'a'.charCodeAt(0);
+const zCodeAscii: number = 'z'.charCodeAt(0);
+const nEnglishLetters: number = zCodeAscii - aCodeAscii + 1;
 
 function shiftCipher(str: string, shift: number = 1): string {
-    let arrayChars: string[] = getArrayFromString(str);
-    shift = getShift(shift);
-    return charTransform(arrayChars, shift, "cipher");
+    return cipherDecipher(str, shift, mapperCipher)
 }
-
 function shiftDecipher(str: string, shift: number = 1): string {
-    let arrayChars: string[] = getArrayFromString(str);
-    shift = getShift(shift);
-    return charTransform(arrayChars, shift, "decipher");
+    return cipherDecipher(str, shift, mapperDecipher)
+}
+function cipherDecipher(str: string, shift: number,
+    mapperFun: (symb: string, shift: number) => string): string {
+    //  const arStr: string[] = Array.from(str); 
+    const arStr: Array<string> = Array.from(str);
+    const arRes: Array<string> = arStr.map(symb => {
+        let res: string = symb;
+        if (symb <= 'z' && symb >= 'a') {
+            res = mapperFun(symb, shift);
+        }
+        return res;
+    })
+    return arRes.join('');
+}
+function mapperCipher(symb: string, shift: number): string {
+    const actualShift: number = (symb.charCodeAt(0) - aCodeAscii + shift) % nEnglishLetters;
+    return String.fromCharCode(aCodeAscii + actualShift);
+}
+function mapperDecipher(symb: string, shift: number): string {
+    const actualShift: number = (symb.charCodeAt(0) - aCodeAscii + shift) % nEnglishLetters;
+    return String.fromCharCode(zCodeAscii - actualShift);
+}
+type TestObj = {
+    str: string,
+    shift?:number
 }
 
-// test
-// console.log("Cipher ->", shiftCipher("abc.!", 1));
-// console.log("Decipher ->", shiftDecipher("abc.!", 1));
-// console.log("Cipher ->", shiftCipher("abc.AB", 26));
-// console.log("Decipher ->", shiftDecipher("abc.Cd", 26));
-// console.log("Cipher ->", shiftCipher("abc.!WSXc", 3));
-// console.log("Decipher ->", shiftDecipher("abz", 3));
+function testCipherDecipher(data: Array<TestObj>, testName: string): void {
+    const funForTest: (str: string, shift?: number) => string
+        = testName === "cipherTest" ? shiftCipher : shiftDecipher;
+    data.forEach((obj => console.log(`str = ${obj.str}, 
+    shift=${obj.shift || 1} => ${funForTest(obj.str, obj.shift)}`)))
+}
+const dataForCipherTest: Array<TestObj> = [
+    { str: "abc" }, { str: "abz", shift: 1000}
+];
